@@ -927,7 +927,14 @@
             updateHighScoreBadge();
 
             // ===== WORD SERVICE (local) =====
-            const usedWords = { 4: new Set(), 5: new Set(), 6: new Set(), 7: new Set() };
+            // Sayfa yenilense bile oynanan kelimeleri hatırlamak için localStorage kullanıyoruz
+            const savedUsedWords = JSON.parse(localStorage.getItem('lingo-used-words')) || { 4: [], 5: [], 6: [], 7: [] };
+            const usedWords = { 
+                4: new Set(savedUsedWords[4]), 
+                5: new Set(savedUsedWords[5]), 
+                6: new Set(savedUsedWords[6]), 
+                7: new Set(savedUsedWords[7]) 
+            };
 
             function getRandomWord(len) {
                 const list = WORD_LIST[len];
@@ -936,7 +943,17 @@
                 const available = list.filter(w => !usedWords[len].has(w));
                 const pool = available.length > 0 ? available : (usedWords[len].clear(), list);
                 const word = pool[Math.floor(Math.random() * pool.length)];
+                
                 usedWords[len].add(word);
+                // Güncel listeyi localStorage'a kaydet
+                const toSave = {
+                    4: Array.from(usedWords[4]),
+                    5: Array.from(usedWords[5]),
+                    6: Array.from(usedWords[6]),
+                    7: Array.from(usedWords[7])
+                };
+                localStorage.setItem('lingo-used-words', JSON.stringify(toSave));
+                
                 return word;
             }
 
