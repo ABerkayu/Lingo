@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="Türkçe Lingo kelime oyunu. Kelimeleri tahmin et, kelime hazneni geliştir!">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <title>Lingo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --text-color: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.6);
+            --border-color: #e2e8f0;
+            --primary-accent: #6366f1;
+            --cell-bg: #f1f5f9;
+            --cell-border: #cbd5e1;
+            --cell-text: #0f172a;
+            --color-correct: #10b981;
+            --color-present: #f59e0b;
+            --color-absent: #64748b;
+            --color-text-white: #ffffff;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: #334155;
+            --primary-accent: #818cf8;
+            --cell-bg: #1e293b;
+            --cell-border: #475569;
+            --cell-text: #f8fafc;
+            --color-correct: #10b981;
+            --color-present: #d97706;
+            --color-absent: #475569;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden !important;
+            touch-action: none;
+            position: fixed;
+            inset: 0;
+            background-color: var(--bg-color);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ========== HEADER ========== */
+        header {
+            width: 100%;
+            padding: 0.2rem 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            background: var(--card-bg);
+            position: fixed;
+            top: 0;
+            z-index: 10;
+            will-change: transform;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--primary-accent), #a855f7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.9);
+        }
+
+        /* ========== SCREENS ========== */
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 500px;
+            margin-top: 48px;
+            height: calc(100dvh - 48px);
+            padding: 0.5rem 0.8rem;
+            padding-bottom: calc(0.5rem + var(--safe-bottom));
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            animation: fadeIn 0.25s ease-out;
+            overflow: hidden;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== MENU ========== */
+        .menu-title {
+            margin-bottom: 1.8rem;
+            margin-top: 1rem;
+            font-size: 1.4rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .level-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .level-btn {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 18px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .level-btn span {
+            font-size: 0.85rem;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
+        .level-btn:active {
+            transform: scale(0.95);
+            border-color: var(--primary-accent);
+            background: var(--primary-accent);
+            color: var(--color-text-white);
+        }
+
+        /* Sıralı Oyun butonu */
+        .sequential-btn {
+            width: 100%;
+            margin-top: 1.2rem;
+            background: linear-gradient(135deg, var(--primary-accent), #a855f7);
+            border: none;
+            padding: 1.2rem 1.5rem;
+            border-radius: 18px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .sequential-btn span {
+            font-size: 0.75rem;
+            font-weight: 400;
+            opacity: 0.85;
+        }
+
+        .sequential-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* ========== GAME VIEW ========== */
+        .game-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Score & Progress */
+        .game-info-bar {
+            width: 100%;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0.2rem;
+            padding: 5px 10px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .game-info-bar.visible {
+            display: flex;
+        }
+
+        .score-display {
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--primary-accent);
+            white-space: nowrap;
+        }
+
+        .progress-bar-container {
+            flex: 1;
+            height: 6px;
+            background: var(--cell-bg);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-accent), #a855f7);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 0.7rem;
+            font-weight: 600;
+            opacity: 0.7;
+            white-space: nowrap;
+        }
+
+        /* ========== BOARD ========== */
+        .board {
+            display: grid;
+            gap: 4px;
+            cursor: pointer;
+            padding: 0;
+            width: auto;
+            justify-content: center;
+            will-change: transform, opacity;
+        }
+
+        .board.slide-out {
+            animation: boardSlideOut 0.3s ease-in forwards;
+        }
+
+        .board.slide-in {
+            animation: boardSlideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes boardSlideOut {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(0.88);
+            }
+        }
+
+        @keyframes boardSlideIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.88);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .cell {
+            width: min(13vw, 42px);
+            height: min(13vw, 42px);
+            background: var(--cell-bg);
+            border: 2px solid var(--cell-border);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: min(1.8rem, 3.5vh);
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--cell-text);
+            position: relative;
+            will-change: transform;
+        }
+
+        #cell-0-0::before {
+            content: "1";
+            position: absolute;
+            left: -18px;
+            font-size: min(0.85rem, 1.8vh);
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        #cell-1-0::before {
+            content: "2";
+            position: absolute;
+            left: -18px;
+            font-size: min(0.85rem, 1.8vh);
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        #cell-2-0::before {
+            content: "3";
+            position: absolute;
+            left: -18px;
+            font-size: min(0.85rem, 1.8vh);
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        #cell-3-0::before {
+            content: "4";
+            position: absolute;
+            left: -18px;
+            font-size: min(0.85rem, 1.8vh);
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        #cell-4-0::before {
+            content: "5";
+            position: absolute;
+            left: -18px;
+            font-size: min(0.85rem, 1.8vh);
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        .cell.filled {
+            border-color: #565758;
+            animation: pop 0.08s ease-out;
+        }
+
+        .cell.active {
+            border-color: var(--color-present) !important;
+            border-width: 3px;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.08);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .cell.revealing {
+            animation: flipIn 0.28s ease forwards;
+        }
+
+        @keyframes flipIn {
+            0% {
+                transform: rotateX(0deg);
+            }
+
+            50% {
+                transform: rotateX(90deg);
+            }
+
+            100% {
+                transform: rotateX(0deg);
+            }
+        }
+
+        .cell.correct {
+            background-color: var(--color-correct) !important;
+            border-color: var(--color-correct) !important;
+            color: var(--color-text-white) !important;
+        }
+
+        .cell.present {
+            background-color: var(--color-present) !important;
+            border-color: var(--color-present) !important;
+            color: var(--color-text-white) !important;
+        }
+
+        .cell.absent {
+            background-color: var(--color-absent) !important;
+            border-color: var(--color-absent) !important;
+            color: var(--color-text-white) !important;
+        }
+
+        .cell.win-bounce {
+            animation: winBounce 0.4s ease forwards;
+        }
+
+        @keyframes winBounce {
+            0% {
+                transform: scale(1);
+            }
+
+            40% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Doğru cevabı gösterme efekti (kaybetme) */
+        .cell.reveal-answer {
+            animation: revealPulse 0.4s ease forwards;
+        }
+
+        @keyframes revealPulse {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+
+            60% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ========== MODAL ========== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal {
+            background: var(--bg-color);
+            padding: 2rem 2rem 1.5rem;
+            border-radius: 22px;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 88%;
+            width: 380px;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal h2 {
+            margin-bottom: 0.8rem;
+            font-size: 1.6rem;
+        }
+
+        .modal p {
+            margin-bottom: 1.2rem;
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .modal #modalWord {
+            display: block;
+            font-size: 2.2rem;
+            margin-top: 8px;
+            letter-spacing: 3px;
+        }
+
+        .modal-stats {
+            display: flex;
+            justify-content: center;
+            gap: 1.2rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .modal-stat {
+            text-align: center;
+        }
+
+        .modal-stat .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary-accent);
+        }
+
+        .modal-stat .stat-label {
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        .action-btn {
+            background: var(--primary-accent);
+            color: #fff;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+        }
+
+        .action-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Point popup */
+        .point-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--color-correct);
+            z-index: 50;
+            pointer-events: none;
+            animation: pointFloat 0.9s ease-out forwards;
+            text-shadow: 0 2px 10px rgba(16, 185, 129, 0.5);
+        }
+
+        @keyframes pointFloat {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+
+            25% {
+                opacity: 1;
+                transform: translate(-50%, -65%) scale(1.15);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -110%) scale(0.8);
+            }
+        }
+
+        /* ========== VIRTUAL KEYBOARD (Gboard Style) ========== */
+        .keyboard {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
+            margin-bottom: max(16px, var(--safe-bottom));
+            padding: 12px 6px 20px;
+            background: var(--keyboard-bg);
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        :root {
+            --keyboard-bg: #dfe1e5;
+            --key-bg: #ffffff;
+            --key-text: #202124;
+            --key-special-bg: #dadce0;
+            --key-enter-bg: #4285f4;
+            --key-enter-text: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --keyboard-bg: #0f172a;
+            --key-bg: #1e293b;
+            --key-text: #f8fafc;
+            --key-special-bg: #334155;
+            --key-enter-bg: #818cf8;
+            --key-enter-text: #ffffff;
+        }
+
+        .key-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+            padding: 0 2px;
+        }
+
+        .key-row:nth-child(2) {
+            padding: 0 16px;
+        }
+
+        .key {
+            flex: 1;
+            max-width: 36px;
+            height: min(7.5vh, 54px);
+            border-radius: 8px;
+            background-color: var(--key-bg);
+            color: var(--key-text);
+            font-weight: 500;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: min(1.1rem, 4.2vw);
+            border: none;
+            outline: none;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 3px 0px rgba(0,0,0,0.08);
+            transition: all 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .key.action-key {
+            flex: 1.5;
+            max-width: 56px;
+            font-size: 1.25rem;
+            background-color: var(--key-special-bg);
+        }
+
+        .key.action-enter {
+            background-color: var(--key-enter-bg);
+            color: var(--key-enter-text);
+        }
+
+        .key:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 2px -1px rgba(0,0,0,0.1), 0 0px 0px rgba(0,0,0,0.08);
+            opacity: 0.9;
+            background-color: var(--key-special-bg);
+        }
+
+        .key.correct {
+            background-color: var(--color-correct) !important;
+            color: white !important;
+        }
+
+        .key.present {
+            background-color: var(--color-present) !important;
+            color: white !important;
+        }
+
+        .key.absent {
+            background-color: var(--color-absent) !important;
+            color: rgba(255,255,255,0.65) !important;
+        }
+
+        /* ========== UTILITY ========== */
+        .btn-text {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 7px 14px;
+            border-radius: 10px;
+            transition: all 0.15s;
+        }
+
+        .btn-text:active {
+            transform: scale(0.95);
+        }
+
+        .loader {
+            display: none;
+            width: 44px;
+            height: 44px;
+            border: 5px solid var(--cell-bg);
+            border-bottom-color: var(--primary-accent);
+            border-radius: 50%;
+            animation: rotation 0.8s linear infinite;
+            margin: 3rem auto;
+        }
+
+        @keyframes rotation {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--text-color);
+            color: var(--bg-color);
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* High score badge */
+        .high-score-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary-accent);
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>LINGO</h1>
+        <button class="theme-toggle" id="themeToggle" aria-label="Temayı Değiştir">🌗</button>
+    </header>
+
+    <!-- Screen: Menu -->
+    <main class="screen active" id="menuScreen">
+        <h2 class="menu-title">Seviye Seç</h2>
+        <div class="level-buttons">
+            <button class="level-btn" data-len="4">4 <span>HARF</span></button>
+            <button class="level-btn" data-len="5">5 <span>HARF</span></button>
+            <button class="level-btn" data-len="6">6 <span>HARF</span></button>
+            <button class="level-btn" data-len="7">7 <span>HARF</span></button>
+        </div>
+        <button class="sequential-btn" id="sequentialBtn">
+            🏆 Sıralı Oyun
+            <span>4→5→6→7 harf · 12 kelime · Puan topla</span>
+        </button>
+        <div class="high-score-badge" id="highScoreBadge"></div>
+    </main>
+
+    <!-- Screen: Game -->
+    <main class="screen" id="gameScreen">
+        <div class="game-header">
+            <button class="btn-text" id="backBtn">❮ Geri</button>
+            <span id="levelLabel" style="font-weight: 800; color: var(--primary-accent);"></span>
+        </div>
+
+        <div class="game-info-bar" id="gameInfoBar">
+            <span class="score-display" id="scoreDisplay">0 puan</span>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-text" id="progressText">1/12</span>
+        </div>
+
+        <div class="loader" id="loader"></div>
+
+        <div id="gameContent"
+            style="display:none; width:100%; height:100%; flex-direction:column; align-items:center; justify-content:space-between;">
+            <div
+                style="flex:1; display:flex; flex-direction:column; justify-content:center; width:100%; align-items:center;">
+                <div class="board" id="board"></div>
+            </div>
+            <div class="keyboard" id="keyboard"></div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="endModal">
+        <div class="modal">
+            <h2 id="modalTitle">Oyun Bitti!</h2>
+            <p id="modalDesc">Doğru Kelime: <strong id="modalWord" style="color:var(--color-correct)"></strong></p>
+            <div class="modal-stats" id="modalStats" style="display:none;">
+                <div class="modal-stat">
+                    <div class="stat-value" id="statScore">0</div>
+                    <div class="stat-label">Puan</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="stat-value" id="statCorrect">0</div>
+                    <div class="stat-label">Doğru</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="stat-value" id="statTotal">12</div>
+                    <div class="stat-label">Toplam</div>
+                </div>
+            </div>
+            <button class="action-btn" id="playAgainBtn">Yeni Oyun</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Yerel Sözlük (22,081 kelime) -->
+    <script src="words.js"></script>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // ===== THEME =====
+            const themeToggle = document.getElementById('themeToggle');
+            const root = document.documentElement;
+            const savedTheme = localStorage.getItem('lingo-theme');
+
+            if (savedTheme) {
+                root.setAttribute('data-theme', savedTheme);
+            } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                root.setAttribute('data-theme', 'dark');
+            }
+
+            themeToggle.addEventListener('click', () => {
+                const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                root.setAttribute('data-theme', next);
+                localStorage.setItem('lingo-theme', next);
+            });
+
+            // ===== TOAST =====
+            const toastEl = document.getElementById('toast');
+            let toastTimer = null;
+            function showToast(msg, duration = 1500) {
+                clearTimeout(toastTimer);
+                toastEl.textContent = msg;
+                toastEl.classList.add('show');
+                toastTimer = setTimeout(() => toastEl.classList.remove('show'), duration);
+            }
+
+            // ===== HIGH SCORE (localStorage) =====
+            function getHighScore() {
+                return parseInt(localStorage.getItem('lingo-highscore') || '0', 10);
+            }
+            function setHighScore(val) {
+                localStorage.setItem('lingo-highscore', String(val));
+            }
+            function updateHighScoreBadge() {
+                const hs = getHighScore();
+                const badge = document.getElementById('highScoreBadge');
+                badge.textContent = hs > 0 ? `🏅 En yüksek skor: ${hs}` : '';
+            }
+            updateHighScoreBadge();
+
+            // ===== WORD SERVICE (local) =====
+            const usedWords = { 4: new Set(), 5: new Set(), 6: new Set(), 7: new Set() };
+
+            function getRandomWord(len) {
+                const list = WORD_LIST[len];
+                if (!list || list.length === 0) return null;
+
+                const available = list.filter(w => !usedWords[len].has(w));
+                const pool = available.length > 0 ? available : (usedWords[len].clear(), list);
+                const word = pool[Math.floor(Math.random() * pool.length)];
+                usedWords[len].add(word);
+                return word;
+            }
+
+            // ===== GAME STATE =====
+            const TOTAL_GUESSES = 5;
+            let wordLength = 5;
+            let targetWord = '';
+            let currentGuessRow = 0;
+            let boardState = [];
+            let isAnimating = false;
+            let keyStyles = {};
+            let lockedPositions = [];
+
+            // Sequential mode
+            let isSequentialMode = false;
+            let seqScore = 0;
+            let seqIndex = 0;
+            let seqCorrect = 0;
+            const SEQ_PLAN = [4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7];
+
+            // ===== DOM CACHE =====
+            const $ = id => document.getElementById(id);
+            const boardEl = $('board');
+            const keyboardEl = $('keyboard');
+            const screens = { menu: $('menuScreen'), game: $('gameScreen') };
+            const loader = $('loader');
+            const gameContent = $('gameContent');
+            const levelLabel = $('levelLabel');
+            const endModal = $('endModal');
+            const gameInfoBar = $('gameInfoBar');
+            const scoreDisplay = $('scoreDisplay');
+            const progressFill = $('progressFill');
+            const progressText = $('progressText');
+
+            const KEYS = [
+                ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Ğ', 'Ü'],
+                ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ş', 'İ'],
+                ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Ö', 'Ç', 'DEL']
+            ];
+            const VALID_KEYS_SET = new Set(KEYS.flat());
+
+            // ===== NAVIGATION =====
+            function showScreen(id) {
+                Object.values(screens).forEach(s => s.classList.remove('active'));
+                screens[id].classList.add('active');
+            }
+
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    isSequentialMode = false;
+                    wordLength = parseInt(btn.getAttribute('data-len'));
+                    levelLabel.textContent = `${wordLength} HARF`;
+                    gameInfoBar.classList.remove('visible');
+                    startGame();
+                });
+            });
+
+            $('sequentialBtn').addEventListener('click', () => {
+                isSequentialMode = true;
+                seqScore = 0;
+                seqIndex = 0;
+                seqCorrect = 0;
+                wordLength = SEQ_PLAN[0];
+                updateSeqUI();
+                gameInfoBar.classList.add('visible');
+                startGame();
+            });
+
+            $('backBtn').addEventListener('click', () => {
+                showScreen('menu');
+                resetGameUI();
+                isSequentialMode = false;
+                gameInfoBar.classList.remove('visible');
+                updateHighScoreBadge();
+            });
+
+            // ===== SEQUENTIAL UI =====
+            function updateSeqUI() {
+                levelLabel.textContent = `${wordLength} HARF`;
+                scoreDisplay.textContent = `${seqScore} puan`;
+                progressText.textContent = `${seqIndex + 1}/12`;
+                progressFill.style.width = `${(seqIndex / 12) * 100}%`;
+            }
+
+            // ===== GAME INIT =====
+            function startGame() {
+                showScreen('game');
+                resetGameUI();
+
+                if (isSequentialMode) {
+                    updateSeqUI();
+                    gameInfoBar.classList.add('visible');
+                }
+
+                loader.style.display = 'block';
+                gameContent.style.display = 'none';
+
+                // Use requestAnimationFrame for smooth initial render
+                requestAnimationFrame(() => {
+                    const word = getRandomWord(wordLength);
+                    if (!word) {
+                        showToast('Kelime bulunamadı!');
+                        showScreen('menu');
+                        return;
+                    }
+
+                    targetWord = word;
+                    loader.style.display = 'none';
+                    gameContent.style.display = 'flex';
+                    buildBoard();
+                    lockedPositions = new Array(wordLength).fill(false);
+                    lockedPositions[0] = true;
+                    boardState[0][0] = targetWord[0];
+                    updateBoardUI();
+                    currentGuessRow = 0;
+                    buildKeyboard();
+                    boardEl.classList.add('slide-in');
+                    setTimeout(() => boardEl.classList.remove('slide-in'), 350);
+                });
+            }
+
+            // ===== SMOOTH TRANSITION (win) =====
+            function transitionToNextWord() {
+                isAnimating = true;
+                boardEl.classList.add('slide-out');
+
+                setTimeout(() => {
+                    boardEl.classList.remove('slide-out');
+                    boardEl.innerHTML = '';
+                    boardState = [];
+                    currentGuessRow = 0;
+                    keyStyles = {};
+
+                    if (isSequentialMode) {
+                        seqIndex++;
+                        if (seqIndex >= 12) {
+                            showSeqEndModal();
+                            return;
+                        }
+                        wordLength = SEQ_PLAN[seqIndex];
+                        updateSeqUI();
+                    }
+
+                    const word = getRandomWord(wordLength);
+                    if (!word) {
+                        showToast('Kelime bulunamadı!');
+                        isAnimating = false;
+                        return;
+                    }
+
+                    targetWord = word;
+                    if (isSequentialMode) levelLabel.textContent = `${wordLength} HARF`;
+
+                    buildBoard();
+                    lockedPositions = new Array(wordLength).fill(false);
+                    lockedPositions[0] = true;
+                    boardState[0][0] = targetWord[0];
+                    updateBoardUI();
+                    buildKeyboard();
+
+                    boardEl.classList.add('slide-in');
+                    setTimeout(() => {
+                        boardEl.classList.remove('slide-in');
+                        isAnimating = false;
+                    }, 350);
+                }, 300);
+            }
+
+            function resetGameUI() {
+                boardEl.innerHTML = '';
+                keyboardEl.innerHTML = '';
+                boardState = [];
+                currentGuessRow = 0;
+                targetWord = '';
+                isAnimating = false;
+                keyStyles = {};
+                endModal.classList.remove('active');
+            }
+
+            // ===== BOARD =====
+            function buildBoard() {
+                boardEl.style.gridTemplateColumns = `repeat(${wordLength}, 1fr)`;
+                const fragment = document.createDocumentFragment();
+
+                for (let r = 0; r < TOTAL_GUESSES; r++) {
+                    const rowState = [];
+                    for (let c = 0; c < wordLength; c++) {
+                        rowState.push('');
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.id = `cell-${r}-${c}`;
+                        fragment.appendChild(cell);
+                    }
+                    boardState.push(rowState);
+                }
+                boardEl.appendChild(fragment);
+            }
+
+            function updateBoardUI() {
+                for (let r = 0; r < boardState.length; r++) {
+                    for (let c = 0; c < wordLength; c++) {
+                        const cell = $(`cell-${r}-${c}`);
+                        if (!cell) continue;
+                        const val = boardState[r][c];
+                        cell.textContent = val;
+                        cell.classList.remove('active', 'filled');
+                        if (val !== '') cell.classList.add('filled');
+                    }
+                }
+
+                // Active cell
+                if (currentGuessRow < TOTAL_GUESSES) {
+                    for (let c = 0; c < wordLength; c++) {
+                        if (boardState[currentGuessRow][c] === '') {
+                            const cell = $(`cell-${currentGuessRow}-${c}`);
+                            if (cell) cell.classList.add('active');
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // ===== KEYBOARD =====
+            function buildKeyboard() {
+                keyboardEl.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+
+                KEYS.forEach(rowKeys => {
+                    const rowEl = document.createElement('div');
+                    rowEl.className = 'key-row';
+
+                    rowKeys.forEach(key => {
+                        const btn = document.createElement('button');
+                        btn.className = 'key';
+
+                        if (key === 'ENTER' || key === 'DEL') {
+                            btn.classList.add('action-key');
+                        }
+                        if (key === 'ENTER') {
+                            btn.classList.add('action-enter');
+                            btn.textContent = '✓';
+                        } else if (key === 'DEL') {
+                            btn.textContent = '⌫';
+                        } else {
+                            btn.textContent = key;
+                        }
+
+                        btn.id = `key-${key}`;
+
+                        if (key.length === 1 && keyStyles[key]) {
+                            btn.classList.add(keyStyles[key]);
+                        }
+
+                        btn.addEventListener('click', () => handleKey(key));
+                        rowEl.appendChild(btn);
+                    });
+                    fragment.appendChild(rowEl);
+                });
+                keyboardEl.appendChild(fragment);
+            }
+
+            function handleKey(key) {
+                if (currentGuessRow >= TOTAL_GUESSES || isAnimating) return;
+
+                const row = boardState[currentGuessRow];
+
+                if (key === 'ENTER') {
+                    submitGuess();
+                } else if (key === 'DEL') {
+                    for (let i = wordLength - 1; i >= 0; i--) {
+                        if (row[i] !== '' && !lockedPositions[i]) {
+                            row[i] = '';
+                            break;
+                        }
+                    }
+                    updateBoardUI();
+                } else if (key.length === 1) {
+                    for (let i = 0; i < wordLength; i++) {
+                        if (row[i] === '') {
+                            row[i] = key;
+                            break;
+                        }
+                    }
+                    updateBoardUI();
+                }
+            }
+
+            // Physical keyboard
+            document.addEventListener('keydown', (e) => {
+                if (!screens.game.classList.contains('active') || isAnimating) return;
+                if (e.key === 'Enter') return handleKey('ENTER');
+                if (e.key === 'Backspace') return handleKey('DEL');
+                const k = e.key.toLocaleUpperCase('tr-TR');
+                if (VALID_KEYS_SET.has(k)) handleKey(k);
+            });
+
+            // ===== GUESS LOGIC =====
+            function submitGuess() {
+                if (currentGuessRow >= TOTAL_GUESSES || isAnimating) return;
+
+                const row = boardState[currentGuessRow];
+                if (row.includes('')) {
+                    // Shake animation
+                    for (let c = 0; c < wordLength; c++) {
+                        const cell = $(`cell-${currentGuessRow}-${c}`);
+                        cell.style.animation = 'none';
+                        cell.offsetHeight; // reflow
+                        cell.style.transform = 'translateX(5px)';
+                        setTimeout(() => cell.style.transform = 'translateX(-5px)', 50);
+                        setTimeout(() => cell.style.transform = 'translateX(5px)', 100);
+                        setTimeout(() => cell.style.transform = 'translateX(0)', 150);
+                    }
+                    return;
+                }
+                evaluateGuess();
+            }
+
+            function evaluateGuess() {
+                isAnimating = true;
+                const guessArr = boardState[currentGuessRow];
+                const guessWord = guessArr.join('');
+                const targetLetters = targetWord.split('');
+                const results = new Array(wordLength).fill('absent');
+
+                // Pass 1: Correct
+                for (let i = 0; i < wordLength; i++) {
+                    if (guessArr[i] === targetLetters[i]) {
+                        results[i] = 'correct';
+                        targetLetters[i] = null;
+                    }
+                }
+
+                // Pass 2: Present
+                for (let i = 0; i < wordLength; i++) {
+                    if (results[i] === 'correct') continue;
+                    const idx = targetLetters.indexOf(guessArr[i]);
+                    if (idx !== -1) {
+                        results[i] = 'present';
+                        targetLetters[idx] = null;
+                    }
+                }
+
+                animateResults(results, guessWord);
+            }
+
+            function animateResults(results, guessWord) {
+                const row = currentGuessRow;
+
+                for (let i = 0; i < wordLength; i++) {
+                    $(`cell-${row}-${i}`).classList.remove('active');
+                }
+
+                results.forEach((res, i) => {
+                    setTimeout(() => {
+                        const cell = $(`cell-${row}-${i}`);
+                        cell.classList.add('revealing');
+                        setTimeout(() => {
+                            cell.classList.add(res);
+                            updateKeyColor(guessWord[i], res);
+                        }, 140);
+                    }, i * 100);
+                });
+
+                setTimeout(() => checkResult(guessWord), wordLength * 100 + 300);
+            }
+
+            function updateKeyColor(letter, status) {
+                const btn = $(`key-${letter}`);
+                if (!btn) return;
+                const prio = { correct: 3, present: 2, absent: 1 };
+                const cur = prio[keyStyles[letter]] || 0;
+                const nxt = prio[status] || 0;
+
+                if (nxt > cur) {
+                    if (keyStyles[letter]) btn.classList.remove(keyStyles[letter]);
+                    btn.classList.add(status);
+                    keyStyles[letter] = status;
+                }
+            }
+
+            // ===== SCORING =====
+            function calcPoints(len, guesses) {
+                const base = { 4: 100, 5: 150, 6: 200, 7: 300 };
+                return (base[len] || 100) + ((TOTAL_GUESSES - guesses) * 50);
+            }
+
+            function showPointPopup(pts) {
+                const el = document.createElement('div');
+                el.className = 'point-popup';
+                el.textContent = `+${pts}`;
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 1000);
+            }
+
+            function playWinBounce(row) {
+                for (let c = 0; c < wordLength; c++) {
+                    setTimeout(() => {
+                        const cell = $(`cell-${row}-${c}`);
+                        if (cell) cell.classList.add('win-bounce');
+                    }, c * 70);
+                }
+            }
+
+            // ===== CHECK RESULT =====
+            function checkResult(guessWord) {
+                if (guessWord === targetWord) {
+                    // WIN
+                    const guesses = currentGuessRow + 1;
+                    playWinBounce(currentGuessRow);
+
+                    if (isSequentialMode) {
+                        const pts = calcPoints(wordLength, guesses);
+                        seqScore += pts;
+                        seqCorrect++;
+                        showPointPopup(pts);
+                        updateSeqUI();
+                    }
+
+                    setTimeout(() => transitionToNextWord(), 700);
+                } else {
+                    currentGuessRow++;
+                    if (currentGuessRow >= TOTAL_GUESSES) {
+                        if (isSequentialMode) {
+                            // Doğru cevabı göster, 3sn bekle, devam et
+                            isAnimating = true;
+                            const lastRow = TOTAL_GUESSES - 1;
+                            for (let c = 0; c < wordLength; c++) {
+                                const cell = $(`cell-${lastRow}-${c}`);
+                                if (cell) {
+                                    setTimeout(() => {
+                                        cell.textContent = targetWord[c];
+                                        cell.className = 'cell correct reveal-answer';
+                                    }, c * 70);
+                                }
+                            }
+                            showToast(`Cevap: ${targetWord}`, 2800);
+
+                            setTimeout(() => {
+                                seqIndex++;
+                                if (seqIndex >= 12) {
+                                    showSeqEndModal();
+                                } else {
+                                    wordLength = SEQ_PLAN[seqIndex];
+                                    transitionToNextWord();
+                                }
+                            }, 3000);
+                        } else {
+                            showModal();
+                        }
+                    } else {
+                        prepareNextRow();
+                    }
+                }
+            }
+
+            function prepareNextRow() {
+                lockedPositions = new Array(wordLength).fill(false);
+                for (let c = 0; c < wordLength; c++) {
+                    const cellAbove = $(`cell-${currentGuessRow - 1}-${c}`);
+                    if (cellAbove && cellAbove.classList.contains('correct')) {
+                        boardState[currentGuessRow][c] = targetWord[c];
+                        lockedPositions[c] = true;
+                    }
+                }
+
+                if (!boardState[currentGuessRow][0]) {
+                    boardState[currentGuessRow][0] = targetWord[0];
+                    lockedPositions[0] = true;
+                }
+
+                updateBoardUI();
+                isAnimating = false;
+            }
+
+            // ===== MODALS =====
+            function showModal() {
+                isAnimating = true;
+                $('modalTitle').textContent = 'Kaybettiniz! 😔';
+                $('modalTitle').style.color = 'var(--color-absent)';
+                $('modalWord').textContent = targetWord;
+                $('modalDesc').style.display = 'block';
+                $('modalStats').style.display = 'none';
+                $('playAgainBtn').textContent = 'Yeni Oyun';
+                endModal.classList.add('active');
+            }
+
+            function showSeqEndModal() {
+                isAnimating = true;
+                const isNewHigh = seqScore > getHighScore();
+                if (isNewHigh) setHighScore(seqScore);
+
+                $('modalTitle').textContent = isNewHigh ? '🎉 Yeni Rekor! 🏆' : 'Sıralı Oyun Bitti! 🏆';
+                $('modalTitle').style.color = 'var(--primary-accent)';
+                $('modalDesc').style.display = 'none';
+                $('modalStats').style.display = 'flex';
+                $('statScore').textContent = seqScore;
+                $('statCorrect').textContent = seqCorrect;
+                $('statTotal').textContent = '12';
+                $('playAgainBtn').textContent = 'Ana Menü';
+
+                progressFill.style.width = '100%';
+                progressText.textContent = '12/12';
+                scoreDisplay.textContent = `${seqScore} puan`;
+
+                endModal.classList.add('active');
+            }
+
+            $('playAgainBtn').addEventListener('click', () => {
+                endModal.classList.remove('active');
+                if (isSequentialMode && $('playAgainBtn').textContent === 'Ana Menü') {
+                    isSequentialMode = false;
+                    gameInfoBar.classList.remove('visible');
+                    showScreen('menu');
+                    updateHighScoreBadge();
+                } else {
+                    startGame();
+                }
+            });
+
+            // ===== PREVENT CONTEXT MENU & ZOOM =====
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.addEventListener('gesturestart', e => e.preventDefault());
+            document.addEventListener('dblclick', e => e.preventDefault());
+
+        })();
+    </script>
+</body>
+
+</html>
