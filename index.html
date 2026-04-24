@@ -826,9 +826,11 @@
         <div class="game-header">
             <button class="btn-text" id="backBtn">❮ Geri</button>
             <span id="levelLabel" style="font-weight: 800; color: var(--primary-accent);"></span>
-            <div style="display: flex; flex-direction: column; gap: 4px; align-items: stretch;">
-                <button class="btn-text" id="hintBtn" style="color: var(--color-present); font-size: 0.8rem; padding: 4px 8px;">💡 Anlam</button>
-                <button class="btn-text" id="letterBtn" style="color: var(--color-correct); font-size: 0.8rem; padding: 4px 8px;">🅰️ Harf</button>
+            <div style="display: flex; flex-direction: column; gap: 8px; align-items: stretch;">
+                <button class="btn-text" id="hintBtn"
+                    style="color: var(--color-present); font-size: 1rem; padding: 8px 16px;">🔍 Anlam</button>
+                <button class="btn-text" id="letterBtn"
+                    style="color: var(--color-correct); font-size: 1rem; padding: 8px 16px;">✨ Harf</button>
             </div>
         </div>
 
@@ -857,7 +859,8 @@
         <div class="modal">
             <h2 id="modalTitle">Oyun Bitti!</h2>
             <p id="modalDesc">Doğru Kelime: <strong id="modalWord" style="color:var(--color-correct)"></strong></p>
-            <p id="modalMeaning" style="font-size: 0.9rem; margin-top: 8px; font-style: italic; opacity: 0.9; display: none;"></p>
+            <p id="modalMeaning"
+                style="font-size: 0.9rem; margin-top: 8px; font-style: italic; opacity: 0.9; display: none;"></p>
             <div class="modal-stats" id="modalStats" style="display:none;">
                 <div class="modal-stat">
                     <div class="stat-value" id="statScore">0</div>
@@ -1050,7 +1053,7 @@
 
             $('letterBtn').addEventListener('click', () => {
                 if (isAnimating || currentGuessRow >= TOTAL_GUESSES || !screens.game.classList.contains('active')) return;
-                
+
                 const row = boardState[currentGuessRow];
                 const unrevealedIndices = [];
 
@@ -1064,7 +1067,7 @@
                     const randomIndex = unrevealedIndices[Math.floor(Math.random() * unrevealedIndices.length)];
                     lockedPositions[randomIndex] = true;
                     row[randomIndex] = targetWord[randomIndex];
-                    
+
                     const cell = $(`cell-${currentGuessRow}-${randomIndex}`);
                     if (cell) {
                         cell.style.animation = 'none';
