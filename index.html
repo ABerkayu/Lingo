@@ -690,7 +690,7 @@
             font-size: min(1.1rem, 4.2vw);
             border: none;
             outline: none;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 3px 0px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 3px 0px rgba(0, 0, 0, 0.08);
             transition: all 0.1s ease;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
@@ -710,7 +710,7 @@
 
         .key:active {
             transform: translateY(3px);
-            box-shadow: 0 1px 2px -1px rgba(0,0,0,0.1), 0 0px 0px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 2px -1px rgba(0, 0, 0, 0.1), 0 0px 0px rgba(0, 0, 0, 0.08);
             opacity: 0.9;
             background-color: var(--key-special-bg);
         }
@@ -727,7 +727,7 @@
 
         .key.absent {
             background-color: var(--color-absent) !important;
-            color: rgba(255,255,255,0.65) !important;
+            color: rgba(255, 255, 255, 0.65) !important;
         }
 
         /* ========== UTILITY ========== */
@@ -826,6 +826,10 @@
         <div class="game-header">
             <button class="btn-text" id="backBtn">❮ Geri</button>
             <span id="levelLabel" style="font-weight: 800; color: var(--primary-accent);"></span>
+            <div style="display: flex; flex-direction: column; gap: 4px; align-items: stretch;">
+                <button class="btn-text" id="hintBtn" style="color: var(--color-present); font-size: 0.8rem; padding: 4px 8px;">💡 Anlam</button>
+                <button class="btn-text" id="letterBtn" style="color: var(--color-correct); font-size: 0.8rem; padding: 4px 8px;">🅰️ Harf</button>
+            </div>
         </div>
 
         <div class="game-info-bar" id="gameInfoBar">
@@ -853,6 +857,7 @@
         <div class="modal">
             <h2 id="modalTitle">Oyun Bitti!</h2>
             <p id="modalDesc">Doğru Kelime: <strong id="modalWord" style="color:var(--color-correct)"></strong></p>
+            <p id="modalMeaning" style="font-size: 0.9rem; margin-top: 8px; font-style: italic; opacity: 0.9; display: none;"></p>
             <div class="modal-stats" id="modalStats" style="display:none;">
                 <div class="modal-stat">
                     <div class="stat-value" id="statScore">0</div>
@@ -873,6 +878,15 @@
 
     <!-- Toast -->
     <div class="toast" id="toast"></div>
+
+    <!-- Hint Modal -->
+    <div class="modal-overlay" id="hintModal">
+        <div class="modal">
+            <h2 style="color: var(--color-present);">💡 İpucu</h2>
+            <p id="hintText" style="font-size: 1rem; margin-bottom: 20px; line-height: 1.4; opacity: 0.9;"></p>
+            <button class="action-btn" id="closeHintBtn">Kapat</button>
+        </div>
+    </div>
 
     <!-- Yerel Sözlük (22,081 kelime) -->
     <script src="words.js"></script>
@@ -925,12 +939,28 @@
             // ===== WORD SERVICE (local) =====
             // Sayfa yenilense bile oynanan kelimeleri hatırlamak için localStorage kullanıyoruz
             const savedUsedWords = JSON.parse(localStorage.getItem('lingo-used-words')) || { 4: [], 5: [], 6: [], 7: [] };
-            const usedWords = { 
-                4: new Set(savedUsedWords[4]), 
-                5: new Set(savedUsedWords[5]), 
-                6: new Set(savedUsedWords[6]), 
-                7: new Set(savedUsedWords[7]) 
+            const usedWords = {
+                4: new Set(savedUsedWords[4]),
+                5: new Set(savedUsedWords[5]),
+                6: new Set(savedUsedWords[6]),
+                7: new Set(savedUsedWords[7])
             };
+
+            let targetWordMeaning = "";
+            async function fetchWordMeaning(word) {
+                targetWordMeaning = "Anlam yükleniyor...";
+                try {
+                    const response = await fetch(`https://sozluk.gov.tr/gts?ara=${word.toLocaleLowerCase('tr-TR')}`);
+                    const data = await response.json();
+                    if (data && data[0] && data[0].anlamlarListe && data[0].anlamlarListe[0]) {
+                        targetWordMeaning = data[0].anlamlarListe[0].anlam;
+                    } else {
+                        targetWordMeaning = "Anlam bulunamadı.";
+                    }
+                } catch (e) {
+                    targetWordMeaning = "Anlam alınamadı.";
+                }
+            }
 
             function getRandomWord(len) {
                 const list = WORD_LIST[len];
@@ -939,7 +969,7 @@
                 const available = list.filter(w => !usedWords[len].has(w));
                 const pool = available.length > 0 ? available : (usedWords[len].clear(), list);
                 const word = pool[Math.floor(Math.random() * pool.length)];
-                
+
                 usedWords[len].add(word);
                 // Güncel listeyi localStorage'a kaydet
                 const toSave = {
@@ -949,7 +979,7 @@
                     7: Array.from(usedWords[7])
                 };
                 localStorage.setItem('lingo-used-words', JSON.stringify(toSave));
-                
+
                 return word;
             }
 
@@ -1018,6 +1048,48 @@
                 startGame();
             });
 
+            $('letterBtn').addEventListener('click', () => {
+                if (isAnimating || currentGuessRow >= TOTAL_GUESSES || !screens.game.classList.contains('active')) return;
+                
+                const row = boardState[currentGuessRow];
+                const unrevealedIndices = [];
+
+                for (let i = 0; i < wordLength; i++) {
+                    if (!lockedPositions[i]) {
+                        unrevealedIndices.push(i);
+                    }
+                }
+
+                if (unrevealedIndices.length > 0) {
+                    const randomIndex = unrevealedIndices[Math.floor(Math.random() * unrevealedIndices.length)];
+                    lockedPositions[randomIndex] = true;
+                    row[randomIndex] = targetWord[randomIndex];
+                    
+                    const cell = $(`cell-${currentGuessRow}-${randomIndex}`);
+                    if (cell) {
+                        cell.style.animation = 'none';
+                        cell.offsetHeight; // reflow
+                        cell.style.animation = 'pop 0.3s ease-out';
+                        updateKeyColor(targetWord[randomIndex], 'correct');
+                    }
+                    updateBoardUI();
+                    showToast('Harf ipucu kullanıldı!');
+                } else {
+                    showToast('Tüm harfler zaten açık!');
+                }
+            });
+
+            $('hintBtn').addEventListener('click', () => {
+                if (!isAnimating && screens.game.classList.contains('active')) {
+                    $('hintText').textContent = targetWordMeaning;
+                    $('hintModal').classList.add('active');
+                }
+            });
+
+            $('closeHintBtn').addEventListener('click', () => {
+                $('hintModal').classList.remove('active');
+            });
+
             $('backBtn').addEventListener('click', () => {
                 showScreen('menu');
                 resetGameUI();
@@ -1057,6 +1129,7 @@
                     }
 
                     targetWord = word;
+                    fetchWordMeaning(word);
                     loader.style.display = 'none';
                     gameContent.style.display = 'flex';
                     buildBoard();
@@ -1101,6 +1174,7 @@
                     }
 
                     targetWord = word;
+                    fetchWordMeaning(word);
                     if (isSequentialMode) levelLabel.textContent = `${wordLength} HARF`;
 
                     buildBoard();
@@ -1431,6 +1505,8 @@
                 $('modalTitle').style.color = 'var(--color-absent)';
                 $('modalWord').textContent = targetWord;
                 $('modalDesc').style.display = 'block';
+                $('modalMeaning').textContent = targetWordMeaning;
+                $('modalMeaning').style.display = 'block';
                 $('modalStats').style.display = 'none';
                 $('playAgainBtn').textContent = 'Yeni Oyun';
                 endModal.classList.add('active');
@@ -1444,6 +1520,7 @@
                 $('modalTitle').textContent = isNewHigh ? '🎉 Yeni Rekor! 🏆' : 'Sıralı Oyun Bitti! 🏆';
                 $('modalTitle').style.color = 'var(--primary-accent)';
                 $('modalDesc').style.display = 'none';
+                $('modalMeaning').style.display = 'none';
                 $('modalStats').style.display = 'flex';
                 $('statScore').textContent = seqScore;
                 $('statCorrect').textContent = seqCorrect;
